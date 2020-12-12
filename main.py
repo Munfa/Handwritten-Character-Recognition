@@ -3,37 +3,43 @@
 
 #import necessary packages
 import numpy as np
-import cv2 as cv
-import matplotlib.pyplot as plt
+import pandas as pd
 import tensorflow as tf
+import matplotlib as plt
+from tf.keras.datasets import mnist
 
-#train model
-mnist = tf.keras.datasets.mnist
-(trainData, trainLabels),(testData,testLabels) = mnist.load_data()
+#load A-Z dataset
+datasetPath = pd.read_csv(r'A_Z Handwritten Data.csv')
+def load_az_dataset(datasetPath):
+  data = []
+  labels = []
 
-trainData = tf.keras.utils.normalize(trainData, axis=1)
-testData = tf.keras.utils.normalize(testData, axis=1)
+  #loop over the rows of the A-Z dataset
+  for row in open(datasetPath):
+    #split label and image from the row
+    row = row.split(",")
+    label = int(row[0])
+    image = np.array([int(x) for x in row[1:]], dtype="unit8")
 
-model = tf.keras.models.Sequential()
-model.add(tf.keras.layers.Flatten(input_shape=(28,28)))
-model.add(tf.keras.layers.Dense(units=128, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(units=128, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(units=10, activation=tf.nn.softmax))
+    #reshaping images into 28X28 matrix
+    image = image.reshape((28,28))
 
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(trainData,trainLabels, epochs=1)
+    #update list of data and labels
+    data.append(image)
+    labels.append(label)
 
-loss, accuracy = model.evaluate(testData, testLabels)
-print(accuracy)
-print(loss)
+    data = np.array(data, dtype="float32")
+    labels = np.array(labels, dtype="int")
 
-model.save('digits.model')
+    return (data, labels)
 
-#predict image
-for x in range(1,6):
-  img = cv.imread(f'{x}.png')[:,:,0]
-  img = np.invert(np.array([img]))
-  prediction = model.predict(img)
-  print(f'The result is probably: {np.argmax(prediction)}')
-  plt.imshow(img[0], cmap= plt.cm.binary)
-  plt.show()
+#load MNIST handwritten digit dataset
+def load_mnist_dataset():
+  ((trainData, trainLabels), (testData, testLabels)) = mnist.load_data()
+  data = np.vstack([trainData, testData])
+  labels = np.hstack([trainLabels, testLabels])
+
+  return (data, labels)
+
+
+
