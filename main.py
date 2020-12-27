@@ -138,3 +138,23 @@ print(classification_report(np.argmax(testy, axis=1),
   np.argmax(predictions, axis=1), target_names=None))
 # save the model to disk
 model.save("model.h5")
+img = cv2.imread(r' image_name')
+img_copy = img.copy()
+
+img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+img = cv2.resize(img, (400,440))
+
+img_copy = cv2.GaussianBlur(img_copy, (7,7), 0)
+img_gray = cv2.cvtColor(img_copy, cv2.COLOR_BGR2GRAY)
+_, img_thresh = cv2.threshold(img_gray, 100, 255, cv2.THRESH_BINARY_INV)
+
+img_final = cv2.resize(img_thresh, (28,28))
+img_final =np.reshape(img_final, (1,28,28,1))
+
+img_pred = labelNames[np.argmax(model.predict(img_final))]
+# plt.imshow(img, cmap='gray')
+
+from google.colab.patches import cv2_imshow
+cv2.putText(img, " _ _ _ ", (20,25), cv2.FONT_HERSHEY_TRIPLEX, 0.7, color = (0,0,230))
+cv2.putText(img, "Prediction: " + img_pred, (20,410), cv2.FONT_HERSHEY_DUPLEX, 1.3, color = (255,0,30))
+cv2_imshow(img)
