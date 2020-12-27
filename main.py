@@ -44,7 +44,7 @@ def load_az_dataset(datasetPath):
   return (data, labels)
 
  # load MNIST handwritten digit dataset
- def load_mnist_dataset():
+  def load_mnist_dataset():
     (trainData, trainLabels), (testData, testLabels) = mnist.load_data()
     trainData = tf.keras.utils.normalize(trainData, axis=1)
     testData = tf.keras.utils.normalize(testData, axis=1)
@@ -52,6 +52,7 @@ def load_az_dataset(datasetPath):
     labels = np.hstack([trainLabels, testLabels])
 
     return (data, labels)
+  
 #loading both datasets and combining them into one
 azPath = "A_Z Handwritten Data.csv"
 (azData, azLabels) = load_az_dataset(azPath)
@@ -69,3 +70,71 @@ data = np.array(data, dtype="float32")
 #add a channel dimension to every image in the dataset and normalize them
 data = np.expand_dims(data, axis=-1)
 data /= 255.0
+
+#convert labels to binary class matrix
+labels = tf.keras.utils.to_categorical(labels, num_classes=None, dtype='float32')
+
+data = data.reshape(-1, 28, 28, 1)
+
+#spliting 80% of the data for training and 20% for testing
+(trainX, testX, trainy, testy) = train_test_split(data, labels, test_size=0.20, random_state=42)
+
+#constructing the image data generator for augmentation
+aug = ImageDataGenerator(
+    rotation_range=10,
+    zoom_range=0.05,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    shear_range=0.15,
+    horizontal_flip=False,
+    fill_mode="nearest"
+)
+
+#The number of epochs to train for and batch size
+Epochs = 10
+BS = 128
+
+#compile our deep neural network
+print("[INFO] compiling model..")
+
+model = tf.keras.models.Sequential()
+
+model.add(tf.keras.layers.Conv2D(32, (5,5), activation=tf.nn.relu, input_shape=trainX.shape[1:]))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2), strides=(2,2)))
+model.add(tf.keras.layers.Conv2D(64, (3,3), kernel_regularizer=tf.keras.regularizers.l2(0.001), activation=tf.nn.relu, padding='same'))
+model.add(tf.keras.layers.Conv2D(128, (3,3), kernel_regularizer=tf.keras.regularizers.l2(0.001), activation=tf.nn.relu, padding='valid'))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2), strides=2))
+
+model.add(tf.keras.layers.Flatten())
+
+model.add(tf.keras.layers.Dense(64, kernel_regularizer=tf.keras.regularizers.l2(0.001), activation=tf.nn.relu))
+model.add(tf.keras.layers.Dense(128, kernel_regularizer=tf.keras.regularizers.l2(0.001), activation=tf.nn.relu))
+
+model.add(tf.keras.layers.Dropout(0.25))
+
+model.add(tf.keras.layers.Dense(266, activation=tf.nn.softmax))
+model.summary()
+
+model.compile(optimizer=Adam(learning_rate=0.0001), loss='categorical_crossentropy', metrics=["accuracy"])
+h = model.fit(aug.flow(trainX, trainy, batch_size=BS), 
+          validation_data=(testX, testy), 
+          steps_per_epoch=len(trainX)//BS,
+          epochs=Epochs,
+          verbose=1)
+
+# evaluate the network and print the accuracy and loss of the model
+score = model.evaluate(testX, testy, verbose=0)
+print("Test loss:", score[0])
+print("Test accuracy:", score[1])
+
+#define the list of label names
+labelNames = "0123456789"
+labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+labelNames = [l for l in labelNames]
+
+print("[INFO] evaluating network...")
+predictions = model.predict(testX, batch_size=BS)
+print(classification_report(np.argmax(testy, axis=1),
+  np.argmax(predictions, axis=1), target_names=None))
+# save the model to disk
+model.save("model.h5")
