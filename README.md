@@ -3,6 +3,19 @@
 ### Project Overview
 This project builds a Convolutional Neural Network(CNN) to recognize handwritten letters and digits using the EMNIST Balanced dataset. The model is trained on grayscale 28x28 images and can predict handwritten characters, including custom images drawn using online tools. The project demonstrates a complete ML workflow: data loading, preprocessing, training, evaluation and prediction. 
 
+### Project Structure
+```
+  ├── data_preprocessing.py        # loads, formats, and preprocesses the dataset
+  ├── view_samples.py              # views samples of images with labels
+  ├── model.py                     # creates the convolutional model for training
+  ├── predict_and_plot.py          # plots training curves and shows predicted images after prediction
+  ├── main.py                      # runs all the files step by step
+  ├── best_model.keras             # saved trained model to load without going through training each time
+  ├── emnist-balanced-mapping.txt  # used for mapping character labels using ASCII values
+  ├── images/                      # contains downloaded images drawn using Kleki
+  ├── result_images/               # contains images of training result, prediction result, curve, and sample previews
+```
+
 ### Install Dependencies
 Install tensorflow, tensorflow_datasets, keras, and pillow
 <pre>
